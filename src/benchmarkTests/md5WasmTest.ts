@@ -1,6 +1,6 @@
 import { WasmBenchResults } from './index';
 // @ts-ignore
-import rustMd5 from 'crypto-js/md5-es';
+import rustMd5 from '../cryptojs-wasm/crypto-js/md5-es';
 // @ts-ignore
 import jsMd5 from 'crypto-js/md5';
 

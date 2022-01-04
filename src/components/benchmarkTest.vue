@@ -49,8 +49,6 @@
   </div>
 </template>
 <script>
-import AES from 'crypto-js/aes-es'
-import CryptoJS from 'crypto-js/core-es'
 
 export default {
   name: 'benchmarkTest',
