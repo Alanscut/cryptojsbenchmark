@@ -54,7 +54,8 @@ export default {
   name: 'benchmark',
   setup() {
     const testNames = [
-      'md5'
+      'md5',
+      'aes'
     ];
 
     return {

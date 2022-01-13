@@ -1,6 +1,6 @@
 import CryptoJS from "./core-es";
 import Base64 from "./enc-base64-es";
-import evpkdf from "./evpkdf-es";
+import { EvpKDF } from "./evpkdf-es";
 
 var C = CryptoJS;
 var C_lib = C.lib;
@@ -16,7 +16,7 @@ var BufferedBlockAlgorithm = C_lib.BufferedBlockAlgorithm;
  * @property {number} _ENC_XFORM_MODE A constant representing encryption mode.
  * @property {number} _DEC_XFORM_MODE A constant representing decryption mode.
  */
-var Cipher = C_lib.Cipher = BufferedBlockAlgorithm.extend({
+export var Cipher = C_lib.Cipher = BufferedBlockAlgorithm.extend({
 	/**
 	 * Configuration options.
 	 *
@@ -132,14 +132,14 @@ var Cipher = C_lib.Cipher = BufferedBlockAlgorithm.extend({
 	 *     var encrypted = cipher.finalize('data');
 	 *     var encrypted = cipher.finalize(wordArray);
 	 */
-	finalize: async function (dataUpdate) {
+	finalize: function (dataUpdate) {
 		// Final data update
 		if (dataUpdate) {
 			this._append(dataUpdate);
 		}
 
 		// Perform concrete-cipher logic
-		var finalProcessedData = await this._doFinalize();
+		var finalProcessedData = this._doFinalize();
 
 		return finalProcessedData;
 	},
@@ -423,7 +423,7 @@ var Pkcs7 = C_pad.Pkcs7 = {
  *
  * @property {number} blockSize The number of 32-bit words this cipher operates on. Default: 4 (128 bits)
  */
-var BlockCipher = C_lib.BlockCipher = Cipher.extend({
+export var BlockCipher = C_lib.BlockCipher = Cipher.extend({
 	/**
 	 * Configuration options.
 	 *
@@ -467,7 +467,7 @@ var BlockCipher = C_lib.BlockCipher = Cipher.extend({
 		this._mode.processBlock(words, offset);
 	},
 
-	_doFinalize: async function () {
+	_doFinalize: function () {
 		var finalProcessedBlocks;
 
 		// Shortcut
@@ -479,10 +479,10 @@ var BlockCipher = C_lib.BlockCipher = Cipher.extend({
 			padding.pad(this._data, this.blockSize);
 
 			// Process final blocks
-			finalProcessedBlocks = await this._process(!!'flush');
+			finalProcessedBlocks = this._process(!!'flush');
 		} else /* if (this._xformMode == this._DEC_XFORM_MODE) */ {
 			// Process final blocks
-			finalProcessedBlocks = await this._process(!!'flush');
+			finalProcessedBlocks = this._process(!!'flush');
 
 			// Unpad data
 			padding.unpad(finalProcessedBlocks);
@@ -657,13 +657,13 @@ var SerializableCipher = C_lib.SerializableCipher = Base.extend({
 	 *     var ciphertextParams = CryptoJS.lib.SerializableCipher.encrypt(CryptoJS.algo.AES, message, key, { iv: iv });
 	 *     var ciphertextParams = CryptoJS.lib.SerializableCipher.encrypt(CryptoJS.algo.AES, message, key, { iv: iv, format: CryptoJS.format.OpenSSL });
 	 */
-	encrypt: async function (cipher, message, key, cfg) {
+	encrypt: function (cipher, message, key, cfg) {
 		// Apply config defaults
 		cfg = this.cfg.extend(cfg);
 
 		// Encrypt
 		var encryptor = cipher.createEncryptor(key, cfg);
-		var ciphertext = await encryptor.finalize(message);
+		var ciphertext = encryptor.finalize(message);
 
 		// Shortcut
 		var cipherCfg = encryptor.cfg;
@@ -698,7 +698,7 @@ var SerializableCipher = C_lib.SerializableCipher = Base.extend({
 	 *     var plaintext = CryptoJS.lib.SerializableCipher.decrypt(CryptoJS.algo.AES, formattedCiphertext, key, { iv: iv, format: CryptoJS.format.OpenSSL });
 	 *     var plaintext = CryptoJS.lib.SerializableCipher.decrypt(CryptoJS.algo.AES, ciphertextParams, key, { iv: iv, format: CryptoJS.format.OpenSSL });
 	 */
-	decrypt: async function (cipher, ciphertext, key, cfg) {
+	decrypt: function (cipher, ciphertext, key, cfg) {
 		// Apply config defaults
 		cfg = this.cfg.extend(cfg);
 
@@ -706,7 +706,7 @@ var SerializableCipher = C_lib.SerializableCipher = Base.extend({
 		ciphertext = this._parse(ciphertext, cfg.format);
 
 		// Decrypt
-		var plaintext = await cipher.createDecryptor(key, cfg).finalize(ciphertext.ciphertext);
+		var plaintext = cipher.createDecryptor(key, cfg).finalize(ciphertext.ciphertext);
 
 		return plaintext;
 	},
@@ -761,15 +761,11 @@ var OpenSSLKdf = C_kdf.OpenSSL = {
 	 *     var derivedParams = CryptoJS.kdf.OpenSSL.execute('Password', 256/32, 128/32);
 	 *     var derivedParams = CryptoJS.kdf.OpenSSL.execute('Password', 256/32, 128/32, 'saltsalt');
 	 */
-	execute: async function (password, keySize, ivSize, salt) {
+	execute: function (password, keySize, ivSize, salt) {
 		// Generate random salt
 		if (!salt) {
 			salt = WordArray.random(64/8);
 		}
-
-		var EvpKDFModule = await evpkdf();
-
-		var EvpKDF = EvpKDFModule.EvpKDF;
 
 		// Derive key and IV
 		var key = EvpKDF.create({ keySize: keySize + ivSize }).compute(password, salt);
@@ -814,18 +810,18 @@ var PasswordBasedCipher = C_lib.PasswordBasedCipher = SerializableCipher.extend(
 	 *     var ciphertextParams = CryptoJS.lib.PasswordBasedCipher.encrypt(CryptoJS.algo.AES, message, 'password');
 	 *     var ciphertextParams = CryptoJS.lib.PasswordBasedCipher.encrypt(CryptoJS.algo.AES, message, 'password', { format: CryptoJS.format.OpenSSL });
 	 */
-	encrypt: async function (cipher, message, password, cfg) {
+	encrypt: function (cipher, message, password, cfg) {
 		// Apply config defaults
 		cfg = this.cfg.extend(cfg);
 
 		// Derive key and other params
-		var derivedParams = await cfg.kdf.execute(password, cipher.keySize, cipher.ivSize);
+		var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize);
 
 		// Add IV to config
 		cfg.iv = derivedParams.iv;
 
 		// Encrypt
-		var ciphertext = await SerializableCipher.encrypt.call(this, cipher, message, derivedParams.key, cfg);
+		var ciphertext = SerializableCipher.encrypt.call(this, cipher, message, derivedParams.key, cfg);
 
 		// Mix in derived params
 		ciphertext.mixIn(derivedParams);
@@ -850,7 +846,7 @@ var PasswordBasedCipher = C_lib.PasswordBasedCipher = SerializableCipher.extend(
 	 *     var plaintext = CryptoJS.lib.PasswordBasedCipher.decrypt(CryptoJS.algo.AES, formattedCiphertext, 'password', { format: CryptoJS.format.OpenSSL });
 	 *     var plaintext = CryptoJS.lib.PasswordBasedCipher.decrypt(CryptoJS.algo.AES, ciphertextParams, 'password', { format: CryptoJS.format.OpenSSL });
 	 */
-	decrypt: async function (cipher, ciphertext, password, cfg) {
+	decrypt: function (cipher, ciphertext, password, cfg) {
 		// Apply config defaults
 		cfg = this.cfg.extend(cfg);
 
@@ -858,19 +854,14 @@ var PasswordBasedCipher = C_lib.PasswordBasedCipher = SerializableCipher.extend(
 		ciphertext = this._parse(ciphertext, cfg.format);
 
 		// Derive key and other params
-		var derivedParams = await cfg.kdf.execute(password, cipher.keySize, cipher.ivSize, ciphertext.salt);
+		var derivedParams = cfg.kdf.execute(password, cipher.keySize, cipher.ivSize, ciphertext.salt);
 
 		// Add IV to config
 		cfg.iv = derivedParams.iv;
 
 		// Decrypt
-		var plaintext = await SerializableCipher.decrypt.call(this, cipher, ciphertext, derivedParams.key, cfg);
+		var plaintext = SerializableCipher.decrypt.call(this, cipher, ciphertext, derivedParams.key, cfg);
 
 		return plaintext;
 	}
 });
-
-export {
-	Cipher,
-	BlockCipher
-}

@@ -1,4 +1,5 @@
 import { BlockCipher } from "./cipher-core-es";
+import { CryptBlock } from "./aes-wasm/aes_bg";
 
 // Lookup tables
 var SBOX = [];
@@ -135,17 +136,17 @@ var AES = BlockCipher.extend({
 		}
 	},
 
-	encryptBlock: async function (M, offset) {
-		await this._doCryptBlock(M, offset, this._keySchedule, SUB_MIX_0, SUB_MIX_1, SUB_MIX_2, SUB_MIX_3, SBOX);
+	encryptBlock: function (M, offset) {
+		this._doCryptBlock(M, offset, this._keySchedule, SUB_MIX_0, SUB_MIX_1, SUB_MIX_2, SUB_MIX_3, SBOX);
 	},
 
-	decryptBlock: async function (M, offset) {
+	decryptBlock: function (M, offset) {
 		// Swap 2nd and 4th rows
 		var t = M[offset + 1];
 		M[offset + 1] = M[offset + 3];
 		M[offset + 3] = t;
 
-		await this._doCryptBlock(M, offset, this._invKeySchedule, INV_SUB_MIX_0, INV_SUB_MIX_1, INV_SUB_MIX_2, INV_SUB_MIX_3, INV_SBOX);
+		this._doCryptBlock(M, offset, this._invKeySchedule, INV_SUB_MIX_0, INV_SUB_MIX_1, INV_SUB_MIX_2, INV_SUB_MIX_3, INV_SBOX);
 
 		// Inv swap 2nd and 4th rows
 		var t = M[offset + 1];
@@ -153,58 +154,26 @@ var AES = BlockCipher.extend({
 		M[offset + 3] = t;
 	},
 
-	_doCryptBlock: async function (M, offset, keySchedule, SUB_MIX_0, SUB_MIX_1, SUB_MIX_2, SUB_MIX_3, SBOX) {
+	_doCryptBlock: function (M, offset, keySchedule, SUB_MIX_0, SUB_MIX_1, SUB_MIX_2, SUB_MIX_3, SBOX) {
 		// Shortcut
 		var nRounds = this._nRounds;
 
-		// Get input, add round key
-		var s0 = M[offset]     ^ keySchedule[0];
-		var s1 = M[offset + 1] ^ keySchedule[1];
-		var s2 = M[offset + 2] ^ keySchedule[2];
-		var s3 = M[offset + 3] ^ keySchedule[3];
+		var m = [M[offset], M[offset + 1], M[offset + 2], M[offset + 3]];
 
-		// Key schedule row counter
-		var ksRow = 4;
+		const cryptblock = CryptBlock.new();
 
-		// Rounds
-		for (var round = 1; round < nRounds; round++) {
-			// Shift rows, sub bytes, mix columns, add round key
-			var t0 = SUB_MIX_0[s0 >>> 24] ^ SUB_MIX_1[(s1 >>> 16) & 0xff] ^ SUB_MIX_2[(s2 >>> 8) & 0xff] ^ SUB_MIX_3[s3 & 0xff] ^ keySchedule[ksRow++];
-			var t1 = SUB_MIX_0[s1 >>> 24] ^ SUB_MIX_1[(s2 >>> 16) & 0xff] ^ SUB_MIX_2[(s3 >>> 8) & 0xff] ^ SUB_MIX_3[s0 & 0xff] ^ keySchedule[ksRow++];
-			var t2 = SUB_MIX_0[s2 >>> 24] ^ SUB_MIX_1[(s3 >>> 16) & 0xff] ^ SUB_MIX_2[(s0 >>> 8) & 0xff] ^ SUB_MIX_3[s1 & 0xff] ^ keySchedule[ksRow++];
-			var t3 = SUB_MIX_0[s3 >>> 24] ^ SUB_MIX_1[(s0 >>> 16) & 0xff] ^ SUB_MIX_2[(s1 >>> 8) & 0xff] ^ SUB_MIX_3[s2 & 0xff] ^ keySchedule[ksRow++];
-
-			// Update state
-			s0 = t0;
-			s1 = t1;
-			s2 = t2;
-			s3 = t3;
-		}
-
-		// Shift rows, sub bytes, add round key
-		var t0 = ((SBOX[s0 >>> 24] << 24) | (SBOX[(s1 >>> 16) & 0xff] << 16) | (SBOX[(s2 >>> 8) & 0xff] << 8) | SBOX[s3 & 0xff]) ^ keySchedule[ksRow++];
-		var t1 = ((SBOX[s1 >>> 24] << 24) | (SBOX[(s2 >>> 16) & 0xff] << 16) | (SBOX[(s3 >>> 8) & 0xff] << 8) | SBOX[s0 & 0xff]) ^ keySchedule[ksRow++];
-		var t2 = ((SBOX[s2 >>> 24] << 24) | (SBOX[(s3 >>> 16) & 0xff] << 16) | (SBOX[(s0 >>> 8) & 0xff] << 8) | SBOX[s1 & 0xff]) ^ keySchedule[ksRow++];
-		var t3 = ((SBOX[s3 >>> 24] << 24) | (SBOX[(s0 >>> 16) & 0xff] << 16) | (SBOX[(s1 >>> 8) & 0xff] << 8) | SBOX[s2 & 0xff]) ^ keySchedule[ksRow++];
+		cryptblock.doCryptBlock(m, nRounds, keySchedule, SUB_MIX_0, SUB_MIX_1, SUB_MIX_2, SUB_MIX_3, SBOX);
 
 		// Set output
-		M[offset]     = t0;
-		M[offset + 1] = t1;
-		M[offset + 2] = t2;
-		M[offset + 3] = t3;
+		M[offset]     = cryptblock.res0;
+		M[offset + 1] = cryptblock.res1;
+		M[offset + 2] = cryptblock.res2;
+		M[offset + 3] = cryptblock.res3;
 	},
 
 	keySize: 256/32
 });
 
-/**
- * Shortcut functions to the cipher's object interface.
- *
- * @example
- *
- *     var ciphertext = CryptoJS.AES.encrypt(message, key, cfg);
- *     var plaintext  = CryptoJS.AES.decrypt(ciphertext, key, cfg);
- */
-var aes = BlockCipher._createHelper(AES);
+const aes = BlockCipher._createHelper(AES);
 
 export default aes;
