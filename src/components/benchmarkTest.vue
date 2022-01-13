@@ -90,8 +90,8 @@ export default {
 
         setTimeout(() => {
           this.jsPerformance = this.wasmTest.runJavaScriptBenchmark();
-          setTimeout(async () => {
-            this.wsPerformances = await this.wasmTest.runWasmBenchmark();
+          setTimeout(() => {
+            this.wsPerformances = this.wasmTest.runWasmBenchmark();
             const comparisons = {};
             for (const runWasmFuncName in this.wsPerformances) {
               comparisons[runWasmFuncName] = (

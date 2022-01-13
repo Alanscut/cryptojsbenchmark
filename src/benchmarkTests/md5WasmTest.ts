@@ -1,6 +1,6 @@
 import { WasmBenchResults } from './index';
 // @ts-ignore
-import rustMd5 from '../cryptojs-wasm/crypto-js/md5-es';
+import { md5 as rustMd5 } from '../cryptojs-wasm/crypto-js/md5-es';
 // @ts-ignore
 import jsMd5 from 'crypto-js/md5';
 
@@ -23,20 +23,18 @@ export default class Md5WasmTest {
     );
   }
 
-  async getAllRunWasmFunc(): Promise<Array<Function>> {
-    const md5Module = await rustMd5();
-    const md5 = md5Module.md5;
-    const runRustWasm = () => md5(this.data).toString();
+  getAllRunWasmFunc(): Array<Function> {
+    const runRustWasm = () => rustMd5(this.data).toString();
     const allFunc: Array<Function> = [];
     allFunc.push(runRustWasm);
 
     return allFunc;
   }
 
-  async runWasmBenchmark(): Promise<WasmBenchResults> {
+  runWasmBenchmark(): WasmBenchResults {
     const result: WasmBenchResults = {};
 
-    for (const runWasm of await this.getAllRunWasmFunc()) {
+    for (const runWasm of this.getAllRunWasmFunc()) {
       for (let i = 0; i < this.warmUpRunLoops; i++) {
         runWasm(); // warm-up
       }
@@ -87,12 +85,12 @@ export default class Md5WasmTest {
     throw this.shouldOverrideError;
   }
 
-  async checkFunctionality(): Promise<boolean> {
+  checkFunctionality(): boolean {
     // run js
     const jsRes = this.runJavaScript();
 
     // run wasm functions and check equal
-    for (const runWasm of await this.getAllRunWasmFunc()) {
+    for (const runWasm of this.getAllRunWasmFunc()) {
       if (!this.check(jsRes, runWasm())) {
         return false;
       }
