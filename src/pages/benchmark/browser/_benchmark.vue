@@ -49,7 +49,7 @@
 </template>
 <script>
 import { ref, Suspense } from 'vue';
-import benchmarkDatasets from '../../../benchmarkDatasets/benchmarkDatasets';
+import benchmarkDatasets from '../../../benchmarkDatasets/benchmarkDatasets.ts';
 export default {
   name: 'benchmark',
   setup() {

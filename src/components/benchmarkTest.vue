@@ -65,18 +65,14 @@ export default {
       benchmarkName: 'JavaScript ',
     };
   },
-  async setup(props) {
+  setup(props) {
     const warmUpRunLoops = 1;
     const benchmarkRunLoops = 10;
     const benchmarkDataset = props.benchmarkDataset;
 
     // init wasmTest class
-    const { testbench, dataSize } = benchmarkDataset;
-    const wasmTest = new testbench(
-      dataSize,
-      warmUpRunLoops,
-      benchmarkRunLoops,
-    );
+    const { dataSize, testbench } = benchmarkDataset;
+    const wasmTest = new testbench(dataSize, warmUpRunLoops, benchmarkRunLoops);
     return { wasmTest };
   },
   methods: {

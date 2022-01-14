@@ -1,13 +1,13 @@
-import md5WasmTest from "../benchmarkTests/md5WasmTest";
-import aesWasmTest from "../benchmarkTests/aesWasmTest";
+import md5WasmTest from "../benchmarkTests/md5WasmTest.ts";
+import aesWasmTest from "../benchmarkTests/aesWasmTest.ts";
 
 const benchmarkDatasets = {
   md5: {
-    data: "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+    dataSize: 1048576,
     testbench: md5WasmTest,
   },
   aes: {
-    data: "hfdsajfjhkldsajlfk;jdsal;kjclnxzoivcdsjauifhjefdsafdsafkjndiksafiuejnkdasfkjasafdsaiunfjkcxzhnuirdsanjkcxznvjdsaoivcncxzjkvndsiuanvjkzxnvuihiundsiufhnuiadghreuiyhyiqnbbjksdfnvkjzaisdufhnka",
+    dataSize: 1048576,
     testbench: aesWasmTest,
   },
 };

@@ -1,4 +1,5 @@
 import { WasmBenchResults } from "./index";
+import { randomString } from "./utils"
 // @ts-ignore
 import core from "../cryptojs-wasm/crypto-js/core-es"
 // @ts-ignore
@@ -7,17 +8,19 @@ import rustAes from "../cryptojs-wasm/crypto-js/aes-es";
 import jsAes from "crypto-js/aes";
 
 export default class AesWasmTest {
-  data: String;
-  key: String;
+  dataSize: number;
   warmUpRunLoops: number;
   benchmarkRunLoops: number;
+  data: String;
+  key: String;
   shouldOverrideError: Error;
 
-  constructor(data: String, warmUpRunLoops: number, benchmarkRunLoops: number) {
-    this.data = data;
-    this.key = "key";
+  constructor(dataSize: number, warmUpRunLoops: number, benchmarkRunLoops: number) {
+    this.dataSize = dataSize;
     this.warmUpRunLoops = warmUpRunLoops;
     this.benchmarkRunLoops = benchmarkRunLoops;
+    this.data = randomString(dataSize);
+    this.key = "key";
     this.shouldOverrideError = Error(
       "Should override this function in sub class"
     );

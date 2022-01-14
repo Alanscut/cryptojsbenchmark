@@ -1,23 +1,22 @@
 import { WasmBenchResults } from './index';
+import { randomString } from "./utils"
 // @ts-ignore
 import { md5 as rustMd5 } from '../cryptojs-wasm/crypto-js/md5-es';
 // @ts-ignore
 import jsMd5 from 'crypto-js/md5';
 
 export default class Md5WasmTest {
-  data: String;
+  dataSize: number;
   warmUpRunLoops: number;
   benchmarkRunLoops: number;
+  data: String;
   shouldOverrideError: Error;
 
-  constructor(
-    data: String,
-    warmUpRunLoops: number,
-    benchmarkRunLoops: number
-  ) {
-    this.data = data;
+  constructor(dataSize: number, warmUpRunLoops: number, benchmarkRunLoops: number) {
+    this.dataSize = dataSize;
     this.warmUpRunLoops = warmUpRunLoops;
     this.benchmarkRunLoops = benchmarkRunLoops;
+    this.data = randomString(dataSize);
     this.shouldOverrideError = Error(
       'Should override this function in sub class',
     );
